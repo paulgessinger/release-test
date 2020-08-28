@@ -1,0 +1,13 @@
+{
+  "standard-version": {
+    "scripts": {
+      "prebump": "cat version_number"
+    },
+    "bumpFiles": [
+      {
+        "filename": "version_number",
+        "type": "plain-text"
+      }
+    ]
+  }
+}
