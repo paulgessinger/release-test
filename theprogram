@@ -1,6 +1,14 @@
 #!/bin/bash
 
+variable='empty'
+if [ "$#" -eq 1 ]; then
+  variable=$1
+  shift
+fi
+
 # it does things!
 echo 'HALLO'
 
 echo 'new feature'
+
+echo 'it now takes input: ${variable}'
