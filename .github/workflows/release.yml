@@ -1,9 +1,9 @@
 name: Release
-on:
-  push:
-    branches:
-      - 'release'
-      - 'releases/**'
+on: [push]
+  # push:
+  #   branches:
+  #     - 'release'
+  #     - 'releases/**'
 
 jobs:
   release:
