@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# it does things!
+echo 'HALLO'
