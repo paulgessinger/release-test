@@ -23,5 +23,5 @@ jobs:
       - run: |
           prev=$(cz version --project)
           cz bump
-          cz changelog --start-rev $(prev)
+          cz changelog --start-rev v${prev}
           
