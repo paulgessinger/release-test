@@ -1,0 +1,6 @@
+[tool.commitizen]
+version_files = [
+  "version_number"
+]
+version = "1.0.0"
+tag_format = "v$major.$minor.$patch$prerelease"
