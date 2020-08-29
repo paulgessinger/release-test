@@ -1,9 +1,9 @@
 name: Release
-on: [push]
-  # push:
-  #   branches:
-  #     - 'release'
-  #     - 'releases/**'
+on: #[push]
+  push:
+    branches:
+      - 'releases'
+      - 'release/**'
 
 jobs:
   release:
@@ -21,6 +21,7 @@ jobs:
       - run: pip install python-semantic-release
 
       - run: |
-          semantic-version version
-          semantic-version changelog --post
+          semantic-release version
+          semantic-release changelog --post
+          git push --follow-tags
           
