@@ -18,10 +18,9 @@ jobs:
         with:
           python-version: '3.8'
       
-      - run: pip install commitizen
+      - run: pip install python-semantic-release
 
       - run: |
-          prev=$(cz version --project)
-          cz bump
-          cz changelog --start-rev v${prev}
+          semantic-version version
+          semantic-version changelog --post
           
