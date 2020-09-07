@@ -22,6 +22,10 @@ def run(cmd):
 
 def get_repo():
     # origin = run(["git", "remote", "get-url", "origin"])
+    repo = os.environ.get("GITHUB_REPOSITORY", None)
+    if repo is not None:
+        return repo
+
     origin = git.remote("get-url", "origin")
     _, loc = origin.split(":", 1)
     repo, _ = loc.split(".", 1)
