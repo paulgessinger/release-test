@@ -182,7 +182,13 @@ async def main():
       git.tag(next_tag)
 
       git.push("--follow-tags")
-      await asyncio.sleep(0.5) # make sure the tag is visible for github
+      for _ in range(5):
+          _all_tags = await gh.getitem("/repos/{repo}/tags")
+          all_tags = [t["name"] for t in _all_tags]
+          if next_tag in all_tags:
+              break
+          await asyncio.sleep(0.5) # make sure the tag is visible for github
+
       await gh.post(f"/repos/{repo}/releases", data={"body": md, "tag_name": next_tag})
 
 
