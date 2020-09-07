@@ -181,15 +181,22 @@ async def main():
 
       git.tag(next_tag)
 
-      git.push("--follow-tags")
-      for _ in range(5):
+      git.push()
+      git.push("origin", next_tag)
+      tag_ok = False
+      for _ in range(10):
           _all_tags = await gh.getitem(f"/repos/{repo}/tags")
           all_tags = [t["name"] for t in _all_tags]
           print("all tags:", all_tags)
           if next_tag in all_tags:
               print("next tag", next_tag, "created")
+              tag_ok = True
               break
-          await asyncio.sleep(0.5) # make sure the tag is visible for github
+          await asyncio.sleep(1) # make sure the tag is visible for github
+
+      if not tag_ok: 
+          print("tag was not created on remote")
+          sys.exit(1)
 
       await gh.post(f"/repos/{repo}/releases", data={"body": md, "tag_name": next_tag})
 
