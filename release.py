@@ -185,7 +185,9 @@ async def main():
       for _ in range(5):
           _all_tags = await gh.getitem(f"/repos/{repo}/tags")
           all_tags = [t["name"] for t in _all_tags]
+          print("all tags:", all_tags)
           if next_tag in all_tags:
+              print("next tag", next_tag, "created")
               break
           await asyncio.sleep(0.5) # make sure the tag is visible for github
 
