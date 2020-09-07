@@ -20,13 +20,9 @@ jobs:
         with:
           python-version: '3.8'
       
-      - run: pip install python-semantic-release
+      - run: pip install python-semantic-release, sh, aiohttp, gidgethub
 
-      # - name: Create release
-      #   run: |
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-      #     semantic-release version -v DEBUG
-      #     git push --follow-tags
-      #     semantic-release changelog --post -v DEBUG
+      - name: Create release
+        run: |
+            .ci/release.py
           
