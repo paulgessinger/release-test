@@ -387,6 +387,7 @@ async def pr_action(
         context = json.loads(context)
         repo = context["repository"]
         token = context["token"]
+        pr = context["event"]["pull_request"]
     else:
         if token is None or repo is None:
             raise ValueError("No context, need token and repo")
