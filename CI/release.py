@@ -435,11 +435,11 @@ async def pr_action(
                 exit_code = 1
                 title = f":no_entry_sign: {title}"
                 if existing_release is not None:
-                    body += f"## :warning: **WARNING**: A release for {next_version} already exists"
+                    body += f"## :warning: **WARNING**: A release for {next_tag} already exists"
                     body += f"[here]({existing_release['html_url']})** :warning:"
                 else:
                     body += (
-                        f"## :warning: **WARNING**: A tag {next_version} already exists"
+                        f"## :warning: **WARNING**: A tag '{next_tag}' already exists"
                     )
 
                 body += "\n"
