@@ -397,9 +397,6 @@ async def pr_action(
 
         bump = evaluate_version_bump(commits)
         print("bump:", bump)
-        if bump is None:
-            print("-> nothing to do")
-            return
         next_version = get_new_version(current_version, bump)
         print("next version:", next_version)
         next_tag = f"v{next_version}"
