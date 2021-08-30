@@ -432,7 +432,7 @@ async def pr_action(
                     "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
                     "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n"
                 )
-                print("")
+                print("::warning::Merging this will not result in a new version")
 
             else:
                 exit_code = 1
@@ -445,7 +445,7 @@ async def pr_action(
                     body += (
                         f"## :warning: **WARNING**: A tag '{next_tag}' already exists"
                     )
-                    print(f"::warning::A tag '{next_tag}' already exists")
+                    print(f"::error::A tag '{next_tag}' already exists")
 
                 body += "\n"
                 body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
