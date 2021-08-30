@@ -353,7 +353,6 @@ async def get_merge_commit_sha(pr: int, repo: str, gh: GitHubAPI) -> str:
 
 async def get_tag(tag: str, repo: str, gh: GitHubAPI):
     async for item in gh.getiter(f"repos/{repo}/tags"):
-        print(item)
         if item["name"] == tag:
             return item
     return None
@@ -377,6 +376,8 @@ async def pr_action(
     fail: bool = False,
     # token: str = typer.Argument(..., envvar="GH_TOKEN"),
 ):
+
+    print("::group::Information")
     context = json.loads(os.environ["GITHUB_CONTEXT"])
     repo = context["repository"]
     target_branch = context["event"]["pull_request"]["base"]["ref"]
@@ -385,7 +386,6 @@ async def pr_action(
     print("Source hash:", sha)
 
     token = os.environ.get("GH_TOKEN", context["token"])
-    print(token)
 
     async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
         gh = GitHubAPI(session, __name__, oauth_token=token)
@@ -410,6 +410,8 @@ async def pr_action(
         print("next version:", next_version)
         next_tag = f"v{next_version}"
 
+        print("::endgroup::")
+
         changes = generate_changelog(commits)
         md = markdown_changelog(next_version, changes, header=False)
 
@@ -430,20 +432,24 @@ async def pr_action(
                     "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
                     "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n"
                 )
+                print("")
 
             else:
                 exit_code = 1
                 title = f":no_entry_sign: {title}"
                 if existing_release is not None:
-                    body += f"## :warning: **WARNING**: A release for {next_tag} already exists"
+                    body += f"## :warning: **WARNING**: A release for '{next_tag}' already exists"
                     body += f"[here]({existing_release['html_url']})** :warning:"
+                    print(f"::error::A release for tag '{next_tag}' already exists")
                 else:
                     body += (
                         f"## :warning: **WARNING**: A tag '{next_tag}' already exists"
                     )
+                    print(f"::warning::A tag '{next_tag}' already exists")
 
                 body += "\n"
                 body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
+
         else:
             body += f"## Merging this PR will create a new release `v{next_version}`\n"
 
@@ -460,7 +466,9 @@ async def pr_action(
 
         body += md
 
+        print("::group::PR message")
         print(body)
+        print("::endgroup::")
 
         await gh.post(
             context["event"]["pull_request"]["url"], data={"body": body, "title": title}
