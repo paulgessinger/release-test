@@ -351,7 +351,14 @@ async def get_merge_commit_sha(pr: int, repo: str, gh: GitHubAPI) -> str:
     raise RuntimeError("Timeout waiting for pull request merge status")
 
 
-async def get_release(tag: str, repo: str, gh: GitHubAPI) -> bool:
+async def get_tag(tag: str, repo: str, gh: GitHubAPI):
+    async for item in gh.getiter(f"repos/{repo}/tags"):
+        if item["name"] == tag:
+            return item
+    return None
+
+
+async def get_release(tag: str, repo: str, gh: GitHubAPI):
     existing_release = None
     try:
         existing_release = await gh.getitem(f"repos/{repo}/releases/tags/v{tag}")
@@ -366,8 +373,11 @@ async def get_release(tag: str, repo: str, gh: GitHubAPI) -> bool:
 @app.command()
 @make_sync
 async def pr_action(
+    fail: bool = False,
     # token: str = typer.Argument(..., envvar="GH_TOKEN"),
 ):
+
+    print("::group::Information")
     context = json.loads(os.environ["GITHUB_CONTEXT"])
     repo = context["repository"]
     target_branch = context["event"]["pull_request"]["base"]["ref"]
@@ -376,7 +386,6 @@ async def pr_action(
     print("Source hash:", sha)
 
     token = os.environ.get("GH_TOKEN", context["token"])
-    print(token)
 
     async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
         gh = GitHubAPI(session, __name__, oauth_token=token)
@@ -397,30 +406,52 @@ async def pr_action(
 
         bump = evaluate_version_bump(commits)
         print("bump:", bump)
-        if bump is None:
-            print("-> nothing to do")
-            return
         next_version = get_new_version(current_version, bump)
         print("next version:", next_version)
         next_tag = f"v{next_version}"
+
+        print("::endgroup::")
 
         changes = generate_changelog(commits)
         md = markdown_changelog(next_version, changes, header=False)
 
         body = ""
+        title = f"Release: {current_version} -> {next_version}"
 
-        existing_release = await get_release(next_version, repo, gh)
+        existing_release = await get_release(next_tag, repo, gh)
+        existing_tag = await get_tag(next_tag, repo, gh)
 
-        body += f"# `v{current_version}` -> `v{next_version}`"
+        body += f"# `v{current_version}` -> `v{next_version}`\n"
 
-        if existing_release is not None:
+        exit_code = 0
+
+        if existing_release is not None or existing_tag is not None:
+
             if current_version == next_version:
-                body += "## :no_entry_sign: Merging this will not result in a new version (no `fix`, `feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate."
+                body += (
+                    "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
+                    "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n"
+                )
+                print("::warning::Merging this will not result in a new version")
 
             else:
-                body += f"## :warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
+                exit_code = 1
+                title = f":no_entry_sign: {title}"
+                if existing_release is not None:
+                    body += f"## :warning: **WARNING**: A release for '{next_tag}' already exists"
+                    body += f"[here]({existing_release['html_url']})** :warning:"
+                    print(f"::error::A release for tag '{next_tag}' already exists")
+                else:
+                    body += (
+                        f"## :warning: **WARNING**: A tag '{next_tag}' already exists"
+                    )
+                    print(f"::error::A tag '{next_tag}' already exists")
+
                 body += "\n"
-                body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!"
+                body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
+
+        else:
+            body += f"## Merging this PR will create a new release `v{next_version}`\n"
 
         if len(unparsed_commits) > 0:
             body += "\n" * 3
@@ -431,21 +462,20 @@ async def pr_action(
 
         body += "\n\n"
 
-        body += "\n"
-
-        body += f"## Merging this PR will create a new release `v{next_version}`\n"
-
         body += "### Changelog"
 
         body += md
 
+        print("::group::PR message")
         print(body)
-
-        title = f"Release: {current_version} -> {next_version}"
+        print("::endgroup::")
 
         await gh.post(
             context["event"]["pull_request"]["url"], data={"body": body, "title": title}
         )
+
+        if fail:
+            sys.exit(exit_code)
 
 
 if __name__ == "__main__":
