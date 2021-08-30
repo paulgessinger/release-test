@@ -374,6 +374,7 @@ async def get_release(tag: str, repo: str, gh: GitHubAPI):
 @app.command()
 @make_sync
 async def pr_action(
+    fail: bool = False,
     # token: str = typer.Argument(..., envvar="GH_TOKEN"),
 ):
     context = json.loads(os.environ["GITHUB_CONTEXT"])
@@ -420,6 +421,8 @@ async def pr_action(
 
         body += f"# `v{current_version}` -> `v{next_version}`\n"
 
+        exit_code = 0
+
         if existing_release is not None or existing_tag is not None:
 
             if current_version == next_version:
@@ -429,6 +432,7 @@ async def pr_action(
                 )
 
             else:
+                exit_code = 1
                 title = f":no_entry_sign: {title}"
                 if existing_release is not None:
                     body += f"## :warning: **WARNING**: A release for {next_version} already exists"
@@ -461,6 +465,9 @@ async def pr_action(
         await gh.post(
             context["event"]["pull_request"]["url"], data={"body": body, "title": title}
         )
+
+        if fail:
+            sys.exit(exit_code)
 
 
 if __name__ == "__main__":
