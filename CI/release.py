@@ -412,12 +412,15 @@ async def pr_action(
 
         if existing_release is not None:
             if current_version == next_version:
-                body += "## :no_entry_sign: Merging this will not result in a new version (no `fix`, `feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate."
+                body += (
+                    "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
+                    "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n\n"
+                )
 
             else:
                 body += f"## :warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
                 body += "\n"
-                body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!"
+                body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
 
         if len(unparsed_commits) > 0:
             body += "\n" * 3
