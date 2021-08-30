@@ -81,8 +81,6 @@ python-gitlab==2.10.1
     # via python-semantic-release
 python-semantic-release==7.19.1
     # via -r CI/requirements.in
-pyyaml==5.4.1
-    # via -r CI/requirements.in
 readme-renderer==29.0
     # via twine
 requests==2.26.0

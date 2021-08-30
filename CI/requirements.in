@@ -2,6 +2,5 @@ python-semantic-release
 aiohttp
 gidgethub
 python-dotenv
-PyYAML
 typer
 sh
