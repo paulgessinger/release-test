@@ -20,11 +20,11 @@ jobs:
         with:
           python-version: '3.8'
       
-      - run: pip install -r requirements.txt
+      - run: pip install -r CI/requirements.txt
 
       - name: Create release
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          ./release.py
+          CI/release.py
           
