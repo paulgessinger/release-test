@@ -252,7 +252,7 @@ async def make_release(
         repo = get_repo()
         print("repo:", repo)
 
-        (commits,) = await get_parsed_commit_range(
+        commits, _ = await get_parsed_commit_range(
             start=sha, end=tag_hash, repo=repo, gh=gh, edit=edit
         )
 
