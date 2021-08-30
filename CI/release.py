@@ -411,28 +411,33 @@ async def pr_action(
 
         existing_release = await get_release(next_version, repo, gh)
 
+        body += f"# `v{current_version}` -> `v{next_version}`"
+
         if existing_release is not None:
             if current_version == next_version:
-                body += ":no_entry_sign: Merging this will not result in a new version (no `fix`, `feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate."
+                body += "## :no_entry_sign: Merging this will not result in a new version (no `fix`, `feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate."
 
             else:
-                body += f":warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
+                body += f"## :warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
                 body += "\n"
                 body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!"
 
-        body += "\n\n"
-
-        body += f"# {current_version} -> {next_version}"
-
-        body += "\n"
-        body += md
-
         if len(unparsed_commits) > 0:
             body += "\n" * 3
-            body += ":warning: This PR contains commits which are not parseable:"
+            body += "## :warning: This PR contains commits which are not parseable:"
             for commit in unparsed_commits:
                 body += f"\n - {commit.message} ({commit.sha})"
             body += "\n **Make sure these commits do not contain changes which affect the bump version!**"
+
+        body += "\n\n"
+
+        body += "\n"
+
+        body += f"## Merging this PR will create a new release `v{next_version}`\n"
+
+        body += "### Changelog"
+
+        body += md
 
         print(body)
 
