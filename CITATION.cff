@@ -1,0 +1,73 @@
+authors:
+- affiliation: CERN
+  family-names: Salzburger
+  given-names: Andreas
+- affiliation: CERN
+  family-names: Gessinger
+  given-names: Paul
+- affiliation: CERN / TUM Muenchen
+  family-names: Klimpel
+  given-names: Fabian
+- affiliation: CERN
+  family-names: Kiehn
+  given-names: Moritz
+- affiliation: CERN / JGU Mainz
+  family-names: Schlag
+  given-names: Bastian
+- affiliation: Universite Paris-Saclay / CNRS/IN2P3
+  family-names: Grasland
+  given-names: Hadrien
+- affiliation: University of Massachussets
+  family-names: Langenberg
+  given-names: Robert
+- affiliation: CERN
+  family-names: Allaire
+  given-names: Corentin
+- affiliation: DESY Hamburg
+  family-names: Ai
+  given-names: Xiaocong
+- affiliation: Universitaet Freiburg
+  family-names: Huth
+  given-names: Benjamin
+- affiliation: UC Berkeley
+  family-names: Gagnon
+  given-names: Louis-Guillaume
+- affiliation: CERN
+  family-names: Calace
+  given-names: Noemi
+- affiliation: CERN
+  family-names: Krasznahorkay
+  given-names: Attila
+- affiliation: UC Berkeley
+  family-names: Yeo
+  given-names: Beomki
+- affiliation: LBNL
+  family-names: Leggett
+  given-names: Charles
+- affiliation: Eotvos Lorand University
+  family-names: Angela
+  given-names: Czirkos
+- affiliation: UC Berkeley
+  family-names: Yamazaki
+  given-names: Tomohiro
+- affiliation: CERN
+  family-names: Niermann
+  given-names: Joana
+- affiliation: UC Berkeley
+  family-names: Ene
+  given-names: Irina
+- affiliation: Oak Ridge National Laboratory
+  family-names: Osborn
+  given-names: Joe
+- affiliation: Stanford University
+  family-names: Garg
+  given-names: Rocky
+  name-particle: Bala
+cff-version: 1.1.0
+date-released: '2021-08-30'
+doi: 10.5281/zenodo.5141419
+license: MPL-2.0
+message: If you use this software, please cite it using these metadata.
+repository-code: https://github.com/acts-project/acts
+title: A Common Tracking Software Project
+version: v12.0.1

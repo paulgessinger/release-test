@@ -12,3 +12,5 @@ echo 'HALLO'
 echo 'new feature'
 
 echo 'it now takes input: ${variable}'
+
+echo "and even more"
