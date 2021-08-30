@@ -11,6 +11,7 @@ import json
 import yaml
 import datetime
 import typer
+import base64
 
 import aiohttp
 from gidgethub.aiohttp import GitHubAPI
@@ -179,6 +180,48 @@ def make_sync(fn):
 app = typer.Typer()
 
 
+async def get_parsed_commit_range(
+    start: str, end: str, repo: str, gh: GitHubAPI, edit: bool = False
+) -> List[Commit]:
+    commits_iter = gh.getiter(f"/repos/{repo}/commits?sha={start}")
+
+    commits = []
+
+    try:
+        async for item in commits_iter:
+            commit_hash = item["sha"]
+            commit_message = item["commit"]["message"]
+            if commit_hash == end:
+                break
+
+            invalid_message = False
+            try:
+                _default_parser(commit_message)
+                # if this succeeds, do nothing
+            except UnknownCommitMessageStyleError as err:
+                print("Unknown commit message style!")
+                invalid_message = True
+            if (
+                (invalid_message or edit)
+                and sys.stdout.isatty()
+                and typer.confirm(f"Edit effective message '{commit_message}'?")
+            ):
+                commit_message = typer.edit(commit_message)
+                _default_parser(commit_message)
+
+            commit = Commit(commit_hash, commit_message)
+            commits.append(commit)
+            print("-", commit)
+            if len(commits) > 100:
+                raise RuntimeError(f"{len(commits)} are a lot. Aborting!")
+        return commits
+    except gidgethub.BadRequest:
+        print(
+            "BadRequest for commit retrieval. That is most likely because you forgot to push the merge commit."
+        )
+        return
+
+
 @app.command()
 @make_sync
 async def make_release(
@@ -202,44 +245,9 @@ async def make_release(
         repo = get_repo()
         print("repo:", repo)
 
-        commits_iter = gh.getiter(f"/repos/{repo}/commits?sha={sha}")
-
-        commits = []
-
-        try:
-            async for item in commits_iter:
-                commit_hash = item["sha"]
-                commit_message = item["commit"]["message"]
-                if commit_hash == tag_hash:
-                    break
-
-                invalid_message = False
-                try:
-                    _default_parser(commit_message)
-                    # if this succeeds, do nothing
-                except UnknownCommitMessageStyleError as err:
-                    print("Unknown commit message style!")
-                    invalid_message = True
-                if (
-                    (invalid_message or edit)
-                    and sys.stdout.isatty()
-                    and click.confirm(f"Edit effective message '{commit_message}'?")
-                ):
-                    commit_message = click.edit(commit_message)
-                    _default_parser(commit_message)
-
-                commit = Commit(commit_hash, commit_message)
-                commits.append(commit)
-                print("-", commit)
-        except gidgethub.BadRequest:
-            print(
-                "BadRequest for commit retrieval. That is most likely because you forgot to push the merge commit."
-            )
-            return
-
-        if len(commits) > 100:
-            print(len(commits), "are a lot. Aborting!")
-            sys.exit(1)
+        commits = await get_parsed_commit_range(
+            start=sha, end=tag_hash, repo=repo, gh=gh, edit=edit
+        )
 
         bump = evaluate_version_bump(commits)
         print("bump:", bump)
@@ -306,16 +314,51 @@ async def make_release(
             )
 
 
+async def get_release_branch_version(
+    repo: str, target_branch: str, gh: GitHubAPI
+) -> str:
+    content = await gh.getitem(
+        f"repos/{repo}/contents/version_number?ref={target_branch}"
+    )
+    assert content["type"] == "file"
+    return base64.b64decode(content["content"]).decode("utf-8")
+
+
+async def get_tag_hash(tag: str, repo: str, gh: GitHubAPI) -> str:
+    async for item in gh.getiter(f"repos/{repo}/tags"):
+        if item["name"] == tag:
+            return item["commit"]["sha"]
+    raise ValueError(f"Tag {tag} not found")
+
+
 @app.command()
 @make_sync
 async def pr_action(
-    token: str = typer.Argument(..., envvar="GH_TOKEN"),
+    # token: str = typer.Argument(..., envvar="GH_TOKEN"),
 ):
+    context = json.loads(os.environ["GITHUB_CONTEXT"])
+    repo = context["repository"]
+    target_branch = context["event"]["pull_request"]["base"]["ref"]
+    print("Target branch:", target_branch)
+    sha = context["event"]["pull_request"]["head"]["sha"]
+    print("Source hash:", sha)
+    merge_commit_sha = context["event"]["pull_request"]["merge_commit_sha"]
+    print("Merge commit sha:", merge_commit_sha)
+
+    token = os.environ.get("GH_TOKEN", context["token"])
+    print(token)
+
     async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
         gh = GitHubAPI(session, __name__, oauth_token=token)
 
-        context = json.loads(os.environ["GITHUB_CONTEXT"])
-        print(context)
+        # Get current version from target branch
+        current_version = await get_release_branch_version(repo, target_branch, gh)
+        tag_hash = await get_tag_hash(f"v{current_version}", repo, gh)
+        print("current_version:", current_version, "[" + tag_hash[:8] + "]")
+
+        commits = await get_parsed_commit_range(
+            start=merge_commit_sha, end=tag_hash, repo=repo, gh=gh
+        )
 
 
 if __name__ == "__main__":
