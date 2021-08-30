@@ -7,7 +7,7 @@ on:
 jobs:
   process_release_pr:
     runs-on: ubuntu-latest
-    if: ${{ github.base_ref == 'releases' || github.base_ref.startsWith("release/") }}
+    if: ${{ github.base_ref == 'releases' || startsWith(github.base_ref, "release/") }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
