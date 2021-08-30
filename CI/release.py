@@ -387,7 +387,6 @@ async def pr_action(
         context = json.loads(context)
         repo = context["repository"]
         token = context["token"]
-        pr = context["event"]["pull_request"]
     else:
         if token is None or repo is None:
             raise ValueError("No context, need token and repo")
@@ -399,6 +398,8 @@ async def pr_action(
 
         if pr is not None:
             pr = await gh.getitem(f"repos/{repo}/pulls/{pr}")
+        else:
+            pr = context["event"]["pull_request"]
 
         target_branch = pr["base"]["ref"]
         print("Target branch:", target_branch)
