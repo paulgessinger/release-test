@@ -7,11 +7,11 @@ on:
 jobs:
   process_release_pr:
     runs-on: ubuntu-latest
-    if: > 
-      ${{ 
+    if: >- 
+      (
         (github.base_ref == 'releases' || startsWith(github.base_ref, 'release/')) 
         && github.event.pull_request.head.repo.full_name == github.repository 
-      }}
+      )
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
