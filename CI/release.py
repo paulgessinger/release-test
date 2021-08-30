@@ -374,24 +374,40 @@ async def get_release(tag: str, repo: str, gh: GitHubAPI):
 @make_sync
 async def pr_action(
     fail: bool = False,
-    # token: str = typer.Argument(..., envvar="GH_TOKEN"),
+    pr: int = None,
+    token: Optional[str] = typer.Option(None, envvar="GH_TOKEN"),
+    repo: Optional[str] = typer.Option(None, envvar="GH_REPO"),
 ):
 
     print("::group::Information")
-    context = json.loads(os.environ["GITHUB_CONTEXT"])
-    repo = context["repository"]
-    target_branch = context["event"]["pull_request"]["base"]["ref"]
-    print("Target branch:", target_branch)
-    sha = context["event"]["pull_request"]["head"]["sha"]
-    print("Source hash:", sha)
 
-    token = os.environ.get("GH_TOKEN", context["token"])
+    context = os.environ.get("GITHUB_CONTEXT")
+
+    if context is not None:
+        context = json.loads(context)
+        repo = context["repository"]
+        token = context["token"]
+    else:
+        if token is None or repo is None:
+            raise ValueError("No context, need token and repo")
+        if pr is None:
+            raise ValueError("No context, need explicit PR to run on")
 
     async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
         gh = GitHubAPI(session, __name__, oauth_token=token)
 
+        if pr is not None:
+            pr = await gh.getitem(f"repos/{repo}/pulls/{pr}")
+
+        target_branch = pr["base"]["ref"]
+        print("Target branch:", target_branch)
+        sha = pr["head"]["sha"]
+        print("Source hash:", sha)
+
         merge_commit_sha = await get_merge_commit_sha(
-            context["event"]["pull_request"]["number"], repo, gh
+            pr["number"],
+            repo,
+            gh,
         )
         print("Merge commit sha:", merge_commit_sha)
 
@@ -457,7 +473,8 @@ async def pr_action(
             body += "\n" * 3
             body += "## :warning: This PR contains commits which are not parseable:"
             for commit in unparsed_commits:
-                body += f"\n - {commit.message} ({commit.sha})"
+                msg, _ = commit.message.split("\n", 1)
+                body += f"\n - {msg} {commit.sha})"
             body += "\n **Make sure these commits do not contain changes which affect the bump version!**"
 
         body += "\n\n"
@@ -470,9 +487,7 @@ async def pr_action(
         print(body)
         print("::endgroup::")
 
-        await gh.post(
-            context["event"]["pull_request"]["url"], data={"body": body, "title": title}
-        )
+        await gh.post(pr["url"], data={"body": body, "title": title})
 
         if fail:
             sys.exit(exit_code)
