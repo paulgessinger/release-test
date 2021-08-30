@@ -360,6 +360,20 @@ async def pr_action(
             start=merge_commit_sha, end=tag_hash, repo=repo, gh=gh
         )
 
+        bump = evaluate_version_bump(commits)
+        print("bump:", bump)
+        if bump is None:
+            print("-> nothing to do")
+            return
+        next_version = get_new_version(current_version, bump)
+        print("next version:", next_version)
+        next_tag = f"v{next_version}"
+
+        changes = generate_changelog(commits)
+        md = markdown_changelog(next_version, changes, header=False)
+
+        print(md)
+
 
 if __name__ == "__main__":
     app()
