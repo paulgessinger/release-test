@@ -351,7 +351,15 @@ async def get_merge_commit_sha(pr: int, repo: str, gh: GitHubAPI) -> str:
     raise RuntimeError("Timeout waiting for pull request merge status")
 
 
-async def get_release(tag: str, repo: str, gh: GitHubAPI) -> bool:
+async def get_tag(tag: str, repo: str, gh: GitHubAPI):
+    async for item in gh.getiter(f"repos/{repo}/tags"):
+        print(item)
+        if item["name"] == tag:
+            return item
+    return None
+
+
+async def get_release(tag: str, repo: str, gh: GitHubAPI):
     existing_release = None
     try:
         existing_release = await gh.getitem(f"repos/{repo}/releases/tags/v{tag}")
@@ -405,12 +413,15 @@ async def pr_action(
         md = markdown_changelog(next_version, changes, header=False)
 
         body = ""
+        title = f"Release: {current_version} -> {next_version}"
 
-        existing_release = await get_release(next_version, repo, gh)
+        existing_release = await get_release(next_tag, repo, gh)
+        existing_tag = await get_tag(next_tag, repo, gh)
 
         body += f"# `v{current_version}` -> `v{next_version}`\n"
 
-        if existing_release is not None:
+        if existing_release is not None or existing_tag is not None:
+
             if current_version == next_version:
                 body += (
                     "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
@@ -418,7 +429,15 @@ async def pr_action(
                 )
 
             else:
-                body += f"## :warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
+                title = f":no_entry_sign: {title}"
+                if existing_release is not None:
+                    body += f"## :warning: **WARNING**: A release for {next_version} already exists"
+                    body += f"[here]({existing_release['html_url']})** :warning:"
+                else:
+                    body += (
+                        f"## :warning: **WARNING**: A tag {next_version} already exists"
+                    )
+
                 body += "\n"
                 body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
         else:
@@ -438,8 +457,6 @@ async def pr_action(
         body += md
 
         print(body)
-
-        title = f"Release: {current_version} -> {next_version}"
 
         await gh.post(
             context["event"]["pull_request"]["url"], data={"body": body, "title": title}
