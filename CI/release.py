@@ -408,13 +408,13 @@ async def pr_action(
 
         existing_release = await get_release(next_version, repo, gh)
 
-        body += f"# `v{current_version}` -> `v{next_version}`"
+        body += f"# `v{current_version}` -> `v{next_version}`\n"
 
         if existing_release is not None:
             if current_version == next_version:
                 body += (
                     "## :no_entry_sign: Merging this will not result in a new version (no `fix`, "
-                    "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n\n"
+                    "`feat` or breaking changes). I recommend **delaying** this PR until more changes accumulate.\n"
                 )
 
             else:
