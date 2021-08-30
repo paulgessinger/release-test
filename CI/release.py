@@ -421,6 +421,8 @@ async def pr_action(
                 body += f"## :warning: **WARNING: A release for {next_version} already exists [here]({existing_release['html_url']})** :warning:"
                 body += "\n"
                 body += ":no_entry_sign: I recommend to **NOT** merge this and double check the target branch!\n\n"
+        else:
+            body += f"## Merging this PR will create a new release `v{next_version}`\n"
 
         if len(unparsed_commits) > 0:
             body += "\n" * 3
@@ -430,10 +432,6 @@ async def pr_action(
             body += "\n **Make sure these commits do not contain changes which affect the bump version!**"
 
         body += "\n\n"
-
-        body += "\n"
-
-        body += f"## Merging this PR will create a new release `v{next_version}`\n"
 
         body += "### Changelog"
 
