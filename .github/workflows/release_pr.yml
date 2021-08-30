@@ -18,7 +18,8 @@ jobs:
       - run: echo "Running here!"
 
 
-  always_run:
-    runs-on: ubuntu-latest
-    steps:
-      - run: echo "SUCCESS!"
+  # Do we need this?
+  # always_run:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - run: echo "SUCCESS!"
