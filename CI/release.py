@@ -10,6 +10,7 @@ import http
 import json
 import yaml
 import datetime
+import typer
 
 import aiohttp
 from gidgethub.aiohttp import GitHubAPI
@@ -20,8 +21,8 @@ from semantic_release.errors import UnknownCommitMessageStyleError
 from semantic_release.history.logs import LEVELS
 from semantic_release.history.parser_helpers import ParsedCommit
 import sh
-import click
 from dotenv import load_dotenv
+import functools
 
 load_dotenv()
 
@@ -166,8 +167,26 @@ def update_citation(citation_file: Path, next_version):
         yaml.dump(data, fh, indent=2)
 
 
-async def main(draft: bool, dry_run: bool, edit: bool):
-    token = os.environ["GH_TOKEN"]
+def make_sync(fn):
+    @functools.wraps(fn)
+    def wrapped(*args, **kwargs):
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(fn(*args, **kwargs))
+
+    return wrapped
+
+
+app = typer.Typer()
+
+
+@app.command()
+@make_sync
+async def make_release(
+    token: str = typer.Argument(..., envvar="GH_TOKEN"),
+    draft: bool = True,
+    dry_run: bool = False,
+    edit: bool = False,
+):
     async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
         gh = GitHubAPI(session, __name__, oauth_token=token)
 
@@ -287,14 +306,17 @@ async def main(draft: bool, dry_run: bool, edit: bool):
             )
 
 
-@click.command()
-@click.option("--draft/--no-draft", default=True)
-@click.option("--dry-run/--no-dry-run", default=False)
-@click.option("--edit", "-e", is_flag=True, default=False)
-def main_sync(*args, **kwargs):
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main(*args, **kwargs))
+@app.command()
+@make_sync
+async def pr_action(
+    token: str = typer.Argument(..., envvar="GH_TOKEN"),
+):
+    async with aiohttp.ClientSession(loop=asyncio.get_event_loop()) as session:
+        gh = GitHubAPI(session, __name__, oauth_token=token)
+
+        context = json.loads(os.environ["GITHUB_CONTEXT"])
+        print(context)
 
 
 if __name__ == "__main__":
-    main_sync()
+    app()

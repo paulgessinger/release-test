@@ -15,7 +15,12 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8'
-      - run: echo "Running here!"
+      - name: Install dependencies
+        run: pip install -r CI/requirements.txt
+      - name: Run release script
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: CI/release.py pr-action
 
 
   # Do we need this?
